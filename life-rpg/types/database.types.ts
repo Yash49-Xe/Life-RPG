@@ -19,10 +19,12 @@ export interface CharacterAttributes {
   [key: string]: number;
 }
 
-export type TaskStatus        = "pending" | "completed" | "failed";
-export type BuildingStatus    = "idle" | "ready" | "upgrading";
-export type DailyQuestStatus  = "pending" | "completed" | "expired";
-export type BuildingType      = "gym" | "library" | "office" | "studio" | string;
+export type TaskStatus          = "pending" | "completed" | "failed";
+export type VerificationType    = "none" | "timer" | "photo" | "gps";
+export type VerificationStatus  = "unverified" | "pending" | "verified" | "flagged";
+export type BuildingStatus      = "idle" | "ready" | "upgrading";
+export type DailyQuestStatus    = "pending" | "completed" | "expired";
+export type BuildingType        = "gym" | "library" | "office" | "studio" | string;
 
 // ── Table row types ───────────────────────────────────────────────────────────
 
@@ -34,13 +36,18 @@ export interface Profile {
 }
 
 export interface Task {
-  id:           string;
-  user_id:      string;
-  category:     string;
-  title:        string;
-  status:       TaskStatus;
-  created_at:   string;
-  completed_at: string | null;
+  id:                   string;
+  user_id:              string;
+  category:             string;
+  title:                string;
+  status:               TaskStatus;
+  started_at?:          string | null;
+  min_duration_seconds?: number;
+  verification_type?:    VerificationType;
+  verification_status?:  VerificationStatus;
+  verification_details?: Json;
+  created_at:           string;
+  completed_at:         string | null;
 }
 
 export interface Character {
