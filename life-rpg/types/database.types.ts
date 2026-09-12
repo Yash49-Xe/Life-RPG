@@ -20,7 +20,7 @@ export interface CharacterAttributes {
 }
 
 export type TaskStatus        = "pending" | "completed" | "failed";
-export type BuildingStatus    = "idle" | "upgrading";
+export type BuildingStatus    = "idle" | "ready" | "upgrading";
 export type DailyQuestStatus  = "pending" | "completed" | "expired";
 export type BuildingType      = "gym" | "library" | "office" | "studio" | string;
 
@@ -29,6 +29,7 @@ export type BuildingType      = "gym" | "library" | "office" | "studio" | string
 export interface Profile {
   id:         string;
   email:      string;
+  coins:      number;
   created_at: string;
 }
 
@@ -53,6 +54,7 @@ export interface Building {
   id:                  string;
   user_id:             string;
   type:                BuildingType;
+  linked_category:     string;
   level:               number;
   current_xp:          number;
   xp_required_next:    number;
@@ -93,6 +95,13 @@ export interface GuildMember {
   joined_at: string;
 }
 
+export interface RateLimit {
+  user_id:      string;
+  action:       string;
+  window_start: string; // ISO 8601 timestamp
+  count:        number;
+}
+
 // ── Supabase Database shape ───────────────────────────────────────────────────
 
 export interface Database {
@@ -100,7 +109,7 @@ export interface Database {
     Tables: {
       profiles: {
         Row:    Profile;
-        Insert: Omit<Profile, "created_at"> & { created_at?: string };
+        Insert: Omit<Profile, "created_at" | "coins"> & { created_at?: string; coins?: number };
         Update: Partial<Omit<Profile, "id">>;
       };
       tasks: {
@@ -138,8 +147,17 @@ export interface Database {
         Insert: Omit<GuildMember, "joined_at"> & { joined_at?: string };
         Update: Partial<Pick<GuildMember, "joined_at">>;
       };
+      rate_limits: {
+        Row:    RateLimit;
+        Insert: RateLimit;
+        Update: Partial<Omit<RateLimit, "user_id" | "action">>;
+      };
     };
-    Views:     Record<string, never>;
+    Views: {
+      leaderboard: {
+        Row: { user_id: string; display_name: string; level: number; xp: number; rank: number };
+      };
+    };
     Functions: Record<string, never>;
     Enums: {
       task_status:         TaskStatus;
