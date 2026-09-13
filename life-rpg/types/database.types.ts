@@ -29,10 +29,13 @@ export type BuildingType        = "gym" | "library" | "office" | "studio" | stri
 // ── Table row types ───────────────────────────────────────────────────────────
 
 export interface Profile {
-  id:         string;
-  email:      string;
-  coins:      number;
-  created_at: string;
+  id:            string;
+  email:         string;
+  coins:         number;
+  created_at:    string;
+  gym_latitude?: number | null;
+  gym_longitude?: number | null;
+  gym_name?:     string | null;
 }
 
 export interface Task {

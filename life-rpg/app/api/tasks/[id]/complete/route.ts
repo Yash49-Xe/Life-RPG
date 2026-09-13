@@ -119,43 +119,51 @@ export async function POST(request: NextRequest, { params }: Params) {
   } else if (vType === "photo") {
     // Photo check (Exercise)
     if (!photoData) {
-      verificationStatus = "flagged";
-      isPartialXp = true;
-      verificationReason = "No exercise photo provided — flagged for partial XP";
-      verificationDetailsRecord.photo = { provided: false };
-    } else {
-      const geminiRes = await verifyExercisePhoto(photoData, mimeType || "image/jpeg");
-      if (geminiRes.verified) {
-        verificationStatus = "verified";
-        verificationReason = geminiRes.reason;
-      } else {
-        // Reject or fallback: set flagged & partial XP
-        verificationStatus = "flagged";
-        isPartialXp = true;
-        verificationReason = geminiRes.reason;
-      }
-      verificationDetailsRecord.gemini = {
-        success: geminiRes.success,
-        confidence: geminiRes.confidence,
-        reason: geminiRes.reason,
-        isFallback: geminiRes.isFallback,
-      };
+      return err("Photo verification required for exercise quests. Please capture or upload a photo of your workout.", 400);
     }
+
+    const geminiRes = await verifyExercisePhoto(photoData, mimeType || "image/jpeg");
+    if (!geminiRes.verified) {
+      return err(`Exercise photo verification failed: ${geminiRes.reason}`, 400);
+    }
+
+    verificationStatus = "verified";
+    verificationReason = geminiRes.reason;
+    verificationDetailsRecord.gemini = {
+      success: geminiRes.success,
+      confidence: geminiRes.confidence,
+      reason: geminiRes.reason,
+      isFallback: geminiRes.isFallback,
+    };
   } else if (vType === "gps") {
     // GPS check (Gym)
-    const gpsRes = verifyGpsLocation(latitude, longitude, accuracy);
-    if (gpsRes.valid) {
-      verificationStatus = "verified";
-      verificationReason = gpsRes.reason;
-    } else {
-      // Invalid GPS -> flag for partial XP
-      verificationStatus = "flagged";
-      isPartialXp = true;
-      verificationReason = gpsRes.reason;
+    const { data: profileObj } = await (supabase
+      .from("profiles")
+      .select("gym_latitude, gym_longitude, gym_name")
+      .eq("id", user.id)
+      .single() as unknown as QueryResult<Profile>);
+
+    if (!profileObj?.gym_latitude || !profileObj?.gym_longitude) {
+      return err("No registered Gym location found on your profile. Please set your Gym location first.", 400);
     }
+
+    const gpsRes = verifyGpsLocation(latitude, longitude, accuracy, {
+      latitude: profileObj.gym_latitude,
+      longitude: profileObj.gym_longitude,
+      name: profileObj.gym_name,
+    });
+
+    if (!gpsRes.valid) {
+      // STRICT REJECTION: Live location does not match saved Gym location
+      return err(gpsRes.reason, 400);
+    }
+
+    verificationStatus = "verified";
+    verificationReason = gpsRes.reason;
     verificationDetailsRecord.gps = {
-      valid: gpsRes.valid,
+      valid: true,
       reason: gpsRes.reason,
+      distanceMeters: gpsRes.distanceMeters,
       details: gpsRes.details,
     };
   }
@@ -200,7 +208,13 @@ export async function POST(request: NextRequest, { params }: Params) {
   // ── 8. Award building XP ──────────────────────────────────────────────────────
   let buildingResult: Building | null = null;
   let buildingBecameReady = false;
-  const buildingType = CATEGORY_BUILDING[task.category.toLowerCase()];
+  const catLower = task.category.toLowerCase();
+  const buildingType = CATEGORY_BUILDING[catLower] || (
+    catLower.includes("gym") || catLower.includes("exer") || catLower.includes("fit") ? "gym" :
+    catLower.includes("stud") || catLower.includes("read") ? "library" :
+    catLower.includes("work") || catLower.includes("job") ? "office" :
+    catLower.includes("person") || catLower.includes("art") ? "studio" : undefined
+  );
 
   if (buildingType) {
     const { data: building } = await (supabase

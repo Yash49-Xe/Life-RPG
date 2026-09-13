@@ -37,18 +37,21 @@ export async function verifyExercisePhoto(
     ? photoBase64.split(",")[1]
     : photoBase64;
 
-  const prompt = `Analyze this image carefully. Is this photo showing a person exercising, workout equipment, a gym, sports activity, running, yoga, or physical training?
+  const prompt = `Analyze this image strictly for proof of physical exercise or workout activity.
+Strict evaluation rules:
+- MUST show real physical exercise, active sports, gym equipment, workout space, running/jogging, pushups/situps/stretches, or genuine fitness activity.
+- MUST REJECT random non-workout photos, landscapes, scenery, anime/cartoons, animals, food, screenshots, text, or inactive sitting poses.
 Reply strictly with a JSON object with keys:
-"is_exercise": boolean,
+"is_exercise": boolean (true ONLY if it is genuine exercise/fitness/workout),
 "confidence": number between 0 and 1,
-"reason": short one-sentence explanation.
-Do not output markdown code blocks or any other formatting outside the raw JSON object.`;
+"reason": clear one-sentence explanation of why it is or is not an exercise photo.
+Do not output markdown code blocks or any other text outside raw JSON.`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
       method: "POST",
@@ -72,7 +75,7 @@ Do not output markdown code blocks or any other formatting outside the raw JSON 
         ],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 200,
+          maxOutputTokens: 1000,
         },
       }),
     });
@@ -85,7 +88,7 @@ Do not output markdown code blocks or any other formatting outside the raw JSON 
       return {
         success: false,
         verified: false,
-        reason: `Gemini API returned status ${response.status} — flagged for partial XP`,
+        reason: `Gemini API returned status ${response.status}`,
         isFallback: true,
       };
     }
@@ -99,7 +102,7 @@ Do not output markdown code blocks or any other formatting outside the raw JSON 
       return {
         success: false,
         verified: false,
-        reason: "Could not parse Gemini verification JSON response — flagged for partial XP",
+        reason: "Could not parse Gemini verification JSON response",
         isFallback: true,
       };
     }
@@ -119,14 +122,14 @@ Do not output markdown code blocks or any other formatting outside the raw JSON 
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     const isAbort = err instanceof Error && err.name === "AbortError";
-    const errorMessage = isAbort ? "Gemini API request timed out (5s)" : (err instanceof Error ? err.message : "Unknown Gemini API error");
+    const errorMessage = isAbort ? "Gemini API request timed out (12s)" : (err instanceof Error ? err.message : "Unknown Gemini API error");
 
     console.warn(`[Gemini Verification Fallback] ${errorMessage}`);
 
     return {
       success: false,
       verified: false,
-      reason: `${errorMessage} — flagged for partial XP`,
+      reason: `${errorMessage}`,
       isFallback: true,
     };
   }

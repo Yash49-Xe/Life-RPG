@@ -11,12 +11,27 @@ export const BUILDING_CATEGORY: Record<string, string> = {
   studio:  "personal",
 };
 
-/** Task category → building type (reverse of BUILDING_CATEGORY) */
+/** Task category → building type (reverse of BUILDING_CATEGORY with full alias support) */
 export const CATEGORY_BUILDING: Record<string, string> = {
-  fitness: "gym",
-  study:   "library",
-  work:    "office",
+  // Gym / Fitness building
+  fitness:  "gym",
+  exercise: "gym",
+  gym:      "gym",
+  workout:  "gym",
+
+  // Library / Study building
+  study:    "library",
+  focus:    "library",
+  reading:  "library",
+
+  // Office / Work building
+  work:     "office",
+  job:      "office",
+
+  // Studio / Personal building
   personal: "studio",
+  hobby:    "studio",
+  craft:    "studio",
 };
 
 /** Default buildings created for every new user */
@@ -50,11 +65,19 @@ export function streakBonusXp(streak: number): number {
 
 /** Base building XP awarded per task completion, by category */
 export function buildingXpForCategory(category: string): number {
+  const catLower = category.toLowerCase();
   const XP: Record<string, number> = {
     fitness:  30,
+    exercise: 30,
+    gym:      30,
+    workout:  30,
     study:    25,
+    focus:    25,
+    reading:  25,
     work:     20,
+    job:      20,
     personal: 15,
+    hobby:    15,
   };
-  return XP[category.toLowerCase()] ?? 10;
+  return XP[catLower] ?? 15;
 }

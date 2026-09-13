@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest) {
 
   const { data, error } = await supabase
     .from("leaderboard")
-    .select("rank, display_name, level, xp")
+    .select("user_id, rank, display_name, level, xp")
     .order("rank", { ascending: true })
     .limit(50);
 
