@@ -14,7 +14,7 @@ export default async function RegisterPage({ searchParams }: Props) {
           <div className="brand-gem mx-auto">
             <span>⚔️</span>
           </div>
-          <h1 className="panel-title text-3xl text-white">FORGE HERO</h1>
+          <h1 className="panel-title text-3xl text-white">Life RPG</h1>
           <p className="game-label text-accent">Create an account to begin your RPG quest</p>
         </div>
 
