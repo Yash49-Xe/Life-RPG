@@ -59,6 +59,20 @@ export default async function RegisterPage({ searchParams }: Props) {
           </button>
         </form>
 
+        <div className="block-inset bg-blue-500/10 border-2 border-blue-500/40 p-3 text-xs text-blue-200 space-y-1">
+          <p className="font-bold flex items-center gap-1">
+            <span>📧</span> Email Verification Required
+          </p>
+          <p className="text-blue-300/80 leading-relaxed">
+            After creating your account, a verification link will be sent to your
+            registered email. Click the link to verify, then return here and{" "}
+            <a href="/login" className="text-accent font-bold underline hover:text-accent/80">
+              sign in
+            </a>{" "}
+            to begin your adventure.
+          </p>
+        </div>
+
         <p className="text-xs text-muted-foreground text-center">
           Already forged?{" "}
           <a href="/login" className="text-accent font-bold hover:underline">
